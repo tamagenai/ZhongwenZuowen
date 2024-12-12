@@ -247,6 +247,24 @@
     let sheetNameDatas;
     let wStatus;  // 音声のstatus
     let wShowResult;  // 音声の出力結果
+    let voices = [];
+    // 初期音声リストの取得
+    voices = speechSynthesis.getVoices();
+    // 音声リストが取得できない場合は、音声リストが取得できるようになるまで待機
+    // 
+    const SYSTEM_PROMPT = `
+役割： あなたは中国語学習の先生です。私はあなたの生徒です。私が書いた中国語の作文を添削してください。
+作文： 作文の文章
+上記の形式で作文の文章をあなたに渡します。
+以下の項目で添削してください。
+添削基準：
+（１）　作文の内容を理解できるか？
+（２）　作文に中国語の文法に誤りがあれば指摘してください。
+（３）　文法の誤りを正した中国語文章も提示してください。
+（４）　文章でより良い表現があれば、中国語で提案してください。
+添削結果： 添削結果を出力してください。
+作文： `;
+
     // Declare webkitSpeechRecognition
     window.SpeechRecognition = window.SpeechRecognition || webkitSpeechRecognition;
     var recognition = new webkitSpeechRecognition();
@@ -275,10 +293,14 @@
       // fncOnseiNyuryokuRetry();
     };
     recognition.onerror = function (event) {
-      // document.getElementById('status').innerHTML = "ERROR";
-      wStatus.innerHTML = "ERROR";
-      console.log("Speech recognition error detected: " + event.error); console.log("Additional information: " + event.message);
-      // fncOnseiNyuryokuRetry();
+      
+      wStatus.innerHTML = "ERROR: " + event.error;
+      console.error("Speech recognition error detected: " + event.error);
+      console.error("Additional information: " + event.message);
+      // 再試行
+      setTimeout(() => {
+        recognition.start();
+      }, 1000);
     };
 
     recognition.onsoundend = function () {
@@ -311,7 +333,7 @@
         if (results[i].isFinal) {
 
           wShowResult.innerHTML += '<div>' + results[i][0].transcript + '</div>';
-
+          sakubun.value += results[i][0].transcript;
           // hAnswer = results[i][0].transcript;
         } else {
 
@@ -498,7 +520,7 @@
         button = document.createElement('button');
         button.setAttribute('class', 'sakubunSave');
         button.setAttribute('onClick', 'sakubunCopyClick()');
-        button.innerHTML = 'コピー';
+        button.innerHTML = 'AI添削依頼';
         divButton.appendChild(button);
         //
         button = document.createElement('button');
@@ -531,7 +553,9 @@
     function sakubunCopyClick() {
       const sakubuns = document.querySelectorAll('.sakubun');
       const sakubun = sakubuns[sheetIndex];
-      navigator.clipboard.writeText(sakubun.value);
+      navigator.clipboard.writeText(SYSTEM_PROMPT + sakubun.value);
+      alert('作成した中国語文章をAIに添削してもらう文章を作り、クリップボードにコピーしました。Chatgpt,Copilot,Gemini等のAIに貼り付けてください。');
+
 
     }
     function sakubunReadClick() {
@@ -588,12 +612,32 @@
       var uttr = new SpeechSynthesisUtterance(td.textContent);
       uttr.lang = "zh-CN"
       uttr.rate = speakSpeedRate();
+      // 利用可能な音声を確認
+      const voices = speechSynthesis.getVoices();
+      const chineseVoice = getChineseVoice();
+
+      if (chineseVoice) {
+        uttr.voice = chineseVoice;
+      } else {
+        console.warn('Chinese voice not found, using default voice.');
+      }
       speechSynthesis.cancel();
       speechSynthesis.speak(uttr);
 
       // }
 
     }
+    function getChineseVoice() {
+      if (voices.length === 0) {
+        voices = speechSynthesis.getVoices();
+      }
+      return voices.find(voice => voice.lang === 'zh-CN');
+    }
+
+    // 音声リストが更新されたときに再取得
+    speechSynthesis.onvoiceschanged = function () {
+      voices = speechSynthesis.getVoices();
+    };
 
     // イニシャル　CSS セット　　最初のシートをイニシャル画面にする。
     function iniCSSSet() {
