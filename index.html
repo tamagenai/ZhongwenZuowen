@@ -85,7 +85,7 @@
       display: none;
     }
 
-    
+
     .sakubunSave {
       display: inline-block;
       background-color: cyan;
@@ -109,7 +109,7 @@
 
 
     .mSakubunBtn {
-      
+
       margin-left: 10px;
       cursor: pointer;
       user-select: none;
@@ -123,15 +123,19 @@
       min-width: 340px;
       min-width: 340px;
     }
+
     .sakubunButtonArea {
       display: flex;
     }
+
     .status {
       font-size: 14px;
     }
+
     .statusNodisplay {
       display: none;
     }
+
     .loading {
       position: fixed;
       top: 100px;
@@ -159,6 +163,7 @@
         transform: rotate(360deg);
       }
     }
+
     @keyframes fadeIn {
       0% {
         opacity: 0;
@@ -224,7 +229,7 @@
     <div id="container">
 
     </div>
-   
+
   </div>
 
   <!-- <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
@@ -278,22 +283,20 @@
     recognition.continuous = true;
 
     //
-    // let onseiStart = document.getElementById('onseiStart');
 
-    // let show_result = document.getElementById('show_result');
     recognition.onsoundstart = function () {
 
       wStatus.innerHTML = "Recognizing";
 
-      // document.getElementsByClassName('dataDisplay').querySelector('.status').innerHTML = "Recognizing";
+
     };
     recognition.onnomatch = function () {
-      // document.getElementById('status').innerHTML = "Try again";
+
       wStatus.innerHTML = "Try again";
-      // fncOnseiNyuryokuRetry();
+
     };
     recognition.onerror = function (event) {
-      
+
       wStatus.innerHTML = "ERROR: " + event.error;
       console.error("Speech recognition error detected: " + event.error);
       console.error("Additional information: " + event.message);
@@ -304,10 +307,25 @@
     };
 
     recognition.onsoundend = function () {
-      // document.getElementById('status').innerHTML = "Stopped";
+
       wStatus.innerHTML = "Stopped";
 
     };
+    
+    recognition.onresult = function (event) {
+      const sakubuns = document.querySelectorAll('.sakubun');
+      const sakubun = sakubuns[sheetIndex];
+      var results = event.results;
+      for (var i = event.resultIndex; i < results.length; i++) {
+        if (results[i].isFinal) {
+          wShowResult.innerHTML += '<div>' + results[i][0].transcript + '</div>';
+          sakubun.value += results[i][0].transcript;
+        }
+      }
+
+
+    };
+
     function fncOnseiNyuryoku(para1) {
       if (para1.innerHTML === 'ストップ') {
         recognition.stop();
@@ -317,32 +335,12 @@
       var classDataContents = document.getElementsByClassName('dataContent');
       wStatus = classDataContents[sheetIndex].children[2];
       wShowResult = classDataContents[sheetIndex].children[3];
-     
+
       para1.innerHTML = 'ストップ';
       recognition.start();
       // this.disabled = true;
 
     }
-
-    recognition.onresult = function (event) {
-
-      var results = event.results;
-      // show_result.innerHTML = '<div>' + results[0][0].transcript + '</div>';
-
-      for (var i = event.resultIndex; i < results.length; i++) {
-        if (results[i].isFinal) {
-
-          wShowResult.innerHTML += '<div>' + results[i][0].transcript + '</div>';
-          sakubun.value += results[i][0].transcript;
-          // hAnswer = results[i][0].transcript;
-        } else {
-
-        }
-
-
-      }
-    }
-
 
     // iniCSSSet();
     //
@@ -440,12 +438,12 @@
           //
           gyou = [' ', xsheetDatas[i][j][3]];
           tabSheetData.push(gyou);
-          
+
 
 
         }
         sheetDatas.push(tabSheetData);
-       
+
 
 
       }
@@ -475,30 +473,30 @@
           for (let k = 1; k < sheetDatas[i][j].length; k++) {
             td = document.createElement('td');
             if (sheetDatas[i][j][0] === 'h' || sheetDatas[i][j][0] === 't') {
-  
+
               td.textContent = sheetDatas[i][j][k];
               td.setAttribute('onclick', 'speakData(this)');
               td.setAttribute('class', 'clkBtn');
               td.style.backgroundColor = "#fffacd";
-  
+
             } else {
-  
+
               td.textContent = sheetDatas[i][j][k];
             }
 
             tr.appendChild(td);
           }
-         
+
 
 
 
           tbody.appendChild(tr);
 
-          }
+        }
 
 
 
-       
+
         //
 
         div = document.createElement('div');
@@ -539,16 +537,16 @@
         //
         small = document.createElement('small');
         small.setAttribute('class', 'status');
-       
+
         divContent.appendChild(small);
         div = document.createElement('div');
         div.setAttribute('class', 'show_result');
         divContent.appendChild(div);
       }
 
-      }
+    }
 
-      //
+    //
 
     function sakubunCopyClick() {
       const sakubuns = document.querySelectorAll('.sakubun');
@@ -564,34 +562,43 @@
       var uttr = new SpeechSynthesisUtterance(sakubun.value);
       uttr.lang = "zh-CN"
       uttr.rate = speakSpeedRate();
+      // 利用可能な音声を確認
+      const voices = speechSynthesis.getVoices();
+      const chineseVoice = getChineseVoice();
+
+      if (chineseVoice) {
+        uttr.voice = chineseVoice;
+      } else {
+        console.warn('Chinese voice not found, using default voice.');
+      }
       speechSynthesis.cancel();
       speechSynthesis.speak(uttr);
 
     }
-    
-    
+
+
     function sakubunSaveClick() {
       const sakubuns = document.querySelectorAll('.sakubun');
       const sakubun = sakubuns[sheetIndex];
       console.log(sakubun.value);
       console.log(sheetNameDatas[sheetIndex]);
       let value = sakubun.value;
-      let sheetName = sheetNameDatas[sheetIndex];
+      let sheetName = 'ai' + sheetNameDatas[sheetIndex];
       localStorage.setItem(sheetName, value);
-      
+
 
     }
     function ShowLength(param) {
-      
+
       console.log(param.value.length);
-      subject.innerHTML = constSubject + 
-      param.value.length + "文字";
+      subject.innerHTML = constSubject +
+        param.value.length + "文字";
     }
     function ShowLength2(value) {
-      if (value === null) {return;}
+      if (value === null) { return; }
       console.log(value.length);
-      subject.innerHTML = constSubject + 
-      value.length + "文字";
+      subject.innerHTML = constSubject +
+        value.length + "文字";
     }
 
     //
@@ -648,16 +655,16 @@
       }
       // 
       localStorageSet(sheetIndex);
-      
-      
+
+
     }
     function localStorageSet(sheetIndex) {
-      let sheetName = sheetNameDatas[sheetIndex];
+      let sheetName = 'ai' + sheetNameDatas[sheetIndex];
       let value = localStorage.getItem(sheetName);
       console.log(`localStorageSet sheetName=${sheetName} value=${value}`);
       if (value === undefined) {
         return;
-      }  
+      }
       const sakubuns = document.querySelectorAll('.sakubun');
       const sakubun = sakubuns[sheetIndex];
       sakubun.value = value;
